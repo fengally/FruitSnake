@@ -38,6 +38,7 @@ private:
 	//all zhe map  is sprite , sprite set position ,create with pic.
 	cocos2d::CCSprite* sprite[30][30];
 	cocos2d::CCSprite* snake_sprite[100];
+	cocos2d::CCSprite* pfood;
 	bool flag, lifeFlag;
 	float gameSpeed;
 	cocos2d::CCLabelTTF* levelTag;

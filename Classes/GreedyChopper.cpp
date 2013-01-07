@@ -62,14 +62,18 @@ bool GreedyChopper::init()
 			this->addChild(snake_sprite[i], 2);
 
 		}
+		 //随机产生食物
 		srand(time(0));
-
-		do
-		{
+		//do
+		//{
 			foodX = rand() % 22 + 1;
 			foodY = rand() % 22 + 1;
-		} while (map[foodX][foodY]);  
-		map[foodX][foodY] = 2;         //随机产生食物
+		//} while (map[foodX][foodY]); 
+			pfood=CCSprite::create("tail.png");
+			pfood->setPosition(ccp(BLOCK_W * foodX+BLOCK_W/2, BLOCK_W * foodY+BLOCK_W/2 ));
+			this->addChild(pfood, 2);
+
+		    
 
 		//把map数组都画上 sprite，这个就得在init初始化的时候画好，不用随循环每次都画。
 		for (int i = 0; i < 24; i++)
@@ -340,11 +344,7 @@ void GreedyChopper::step(float dt)
 			foodX = rand() % 22 + 1;
 			foodY = rand() % 22 + 1;
 		} while (0);
-		int i=foodX,j=foodY;
-		this->removeChild(sprite[i][j], true);
-		sprite[i][j] = CCSprite::create("tail.png");
-		sprite[i][j]->setPosition(ccp(BLOCK_W * i+BLOCK_W/2, BLOCK_W * j+BLOCK_W/2));
-		this->addChild(sprite[i][j], 1);
+		pfood->setPosition(ccp(BLOCK_W * foodX+BLOCK_W/2, BLOCK_W * foodY+BLOCK_W/2));
 		/*length++;
 		if (length >= 8)
 		{
