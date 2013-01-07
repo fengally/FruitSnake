@@ -38,51 +38,64 @@ bool GreedyChopper::init()
 
 		//////////////////////////////////////////////////////////////////////////
 		// add your codes below...
-		memset(graph, 0, sizeof(graph));
+		memset(map, 0, sizeof(map));
 		//墙壁,在边缘
 		for (int i = 0; i < 24; i++)
 		{
-			graph[0][i] = graph[23][i] = 1;
+			map[0][i] = map[23][i] = 1;
+			map[i][0] = map[i][23] = 1;
 		}
-		for (int i = 1; i < 23; i++)
-		{
-			graph[i][0] = graph[i][23] = 1;
-		}
-		for (int i = 1; i <= 3; i++)
-			graph[1][i] = 2;      //蛇身
-			graph[1][4] = 3;      //蛇头
-		for (int i = 0; i < 4; i++)
-		{
-			chopper[0][i] = 1;
-			chopper[1][i] = i + 1;
-		}                        
 		//记录贪吃蛇所在的坐标
-		head = 3, tail = 0, length = 4;
+		// 初始化节点数量
+		snakeNum = 4;
+		// 初始化节点数据
+
+		for (int i = 0; i < snakeNum; i++) {
+			snake[i][0] = 10-i;  
+			snake[i][1] = 4;
+			if(i==0){
+				snake_sprite[i]=CCSprite::create("head.png");
+			}else{
+				snake_sprite[i]=CCSprite::create("tail.png");
+			}
+			snake_sprite[i]->setPosition(ccp(BLOCK_W * snake[i][0]+BLOCK_W/2, BLOCK_W * snake[i][1]+BLOCK_W/2 ));
+			this->addChild(snake_sprite[i], 2);
+
+		}
 		srand(time(0));
+
 		do
 		{
-			beanX = rand() % 22 + 1;
-			beanY = rand() % 22 + 1;
-		} while (graph[beanX][beanY]);  
-		graph[beanX][beanY] = 2;         //随机产生食物
+			foodX = rand() % 22 + 1;
+			foodY = rand() % 22 + 1;
+		} while (map[foodX][foodY]);  
+		map[foodX][foodY] = 2;         //随机产生食物
+
+		//把map数组都画上 sprite，这个就得在init初始化的时候画好，不用随循环每次都画。
 		for (int i = 0; i < 24; i++)
 		{
 			for (int j = 0; j < 24; j++)
 			{
-				if (graph[i][j] == 1)
+				if (map[i][j] == 1)
 					sprite[i][j] = CCSprite::create("wall.png");
-				else if (graph[i][j] == 2)
-					sprite[i][j] = CCSprite::create("tail.png");
-				else if (graph[i][j] == 3)
-					sprite[i][j] = CCSprite::create("head.png");
+				/*else if (map[i][j] == 2)
+				sprite[i][j] = CCSprite::create("tail.png");
+				else if (map[i][j] == 3)
+				sprite[i][j] = CCSprite::create("head.png");
+				*/
 				else
 					sprite[i][j] = CCSprite::create("grid.png");
-				sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
+				sprite[i][j]->setPosition(ccp(BLOCK_W * i+BLOCK_W/2, BLOCK_W * j+BLOCK_W/2));
 				this->addChild(sprite[i][j], 1);
 			}
 		}
+
+		//关于地图 以及snake的初始化完成，以下是关于各种记录和按钮的初始化
+		///////////////////////////////////////////////////////////////////////////////////////
+
+
 		//方向默认向上，自动前进速度默认为800ms，等级为1
-		life = 3, direction = 1, gameSpeed = 500, level = 1, speed = 20 / (gameSpeed / 1000);
+		life = 3, direction = DIRECTION_RIGHT, gameSpeed = 500, level = 1, speed = 20 / (gameSpeed / 1000);
 		flag = true, lifeFlag = true;
 		sumTime = 0;
 		char life_str[24], level_str[24], time_str[24], speed_str[24];
@@ -205,32 +218,32 @@ void GreedyChopper::menuOnNewGame(CCObject* pSender)
 		HelloWorld* pScene = HelloWorld::create();
 		CC_BREAK_IF(!pScene);
 		scene->addChild(pScene);
-		CCDirector::sharedDirector()->replaceScene(CCTransitionSlideInR::transitionWithDuration(0.5, scene));
+		CCDirector::sharedDirector()->replaceScene(CCTransitionSlideInR::create(0.5, scene));
 	} while (0);
 }
 
 void GreedyChopper::clickUp(CCObject* pSender)
 {
 	if (flag)
-		direction = 1;
+		direction = DIRECTION_UP;
 }
 
 void GreedyChopper::clickDown(CCObject* pSender)
 {
 	if (flag)
-		direction = 2;
+		direction = DIRECTION_DOWN;
 }
 
 void GreedyChopper::clickRight(CCObject* pSender)
 {
 	if (flag)
-		direction = 3;
+		direction = DIRECTION_RIGHT;
 }
 
 void GreedyChopper::clickLeft(CCObject* pSender)
 {
 	if (flag)
-		direction = 4;
+		direction = DIRECTION_LEFT;
 }
 
 void GreedyChopper::step(float dt)
@@ -243,25 +256,50 @@ void GreedyChopper::step(float dt)
 	timeTag = CCLabelTTF::create(time_str, "font09.fnt", 20);
 	timeTag->setPosition(ccp(630, 420));
 	this->addChild(timeTag, 1);
-	switch (direction)
-	{
-		//向上
-	case 1: x = chopper[0][head], y = chopper[1][head] + 1, lifeFlag = true;
+
+
+
+
+	// 第一个单元格移动
+
+	switch (direction) {
+
+	case DIRECTION_UP:
+
+		x = snake[0][0] ;
+		y = snake[0][1] + 1;
+		lifeFlag = true;
 		break;
-		//向下
-	case 2: x = chopper[0][head], y = chopper[1][head] - 1, lifeFlag = true;
+
+	case DIRECTION_DOWN:
+
+		x = snake[0][0] ;
+		y = snake[0][1] - 1;
+		lifeFlag = true;
 		break;
-		//向右
-	case 3: x = chopper[0][head] + 1, y = chopper[1][head], lifeFlag = true;
+
+	case DIRECTION_LEFT:
+
+		x = snake[0][0] - 1;
+		y = snake[0][1];
+		lifeFlag = true;
 		break;
-		//向左
-	case 4: x = chopper[0][head] - 1, y = chopper[1][head], lifeFlag = true;
+
+	case DIRECTION_RIGHT:
+
+		x = snake[0][0] + 1;
+		y = snake[0][1];
+		lifeFlag = true;
 		break;
-	default: x = chopper[0][head], y = chopper[1][head], lifeFlag = false;
-		break;
+
 	}
+
+
+
+
+
 	//贪吃蛇触碰到墙壁，Game Over
-	if ((x == 0 || x == 23 || y == 0 || y == 23) || (graph[x][y] && !(x == beanX && y == beanY)))
+	if ((x == 0 || x == 23 || y == 0 || y == 23) || (map[x][y] && !(x == foodX && y == foodY)))
 	{
 		if (life && lifeFlag)
 			life--;
@@ -287,35 +325,53 @@ void GreedyChopper::step(float dt)
 		return;
 	}
 	//吃到苹果时候
-	else if (x == beanX && y == beanY)
+	else if (x == foodX && y == foodY)
 	{
-		length++;
+		//snake长度+1
+		snakeNum++;
+		snake_sprite[snakeNum-1]=CCSprite::create("tail.png");
+		snake_sprite[snakeNum-1]->setPosition(ccp(BLOCK_W * foodX+BLOCK_W/2, BLOCK_W * foodY+BLOCK_W/2));
+		this->addChild(snake_sprite[snakeNum-1], 1);
+
+
+		//随机产生个food
+		do
+		{
+			foodX = rand() % 22 + 1;
+			foodY = rand() % 22 + 1;
+		} while (0);
+		int i=foodX,j=foodY;
+		this->removeChild(sprite[i][j], true);
+		sprite[i][j] = CCSprite::create("tail.png");
+		sprite[i][j]->setPosition(ccp(BLOCK_W * i+BLOCK_W/2, BLOCK_W * j+BLOCK_W/2));
+		this->addChild(sprite[i][j], 1);
+		/*length++;
 		if (length >= 8)
 		{
-			length -= 8;
-			level++;
-			if (gameSpeed > 50)
-				gameSpeed -= 50;
-			this->removeChild(levelTag, true);
-			char level_str[24];
-			sprintf(level_str, "Level: %d", level);
-			levelTag = CCLabelTTF::create(level_str, "font09.fnt", 20);
-			levelTag->setPosition(ccp(630, 430));
-			this->addChild(levelTag, 1);
-			this->removeChild(speedTag, true);
-			char speed_str[24];
-			speed = 20 / (gameSpeed / 1000);
-			sprintf(speed_str, "Speed: %d", speed);
-			speedTag = CCLabelTTF::create(speed_str, "font09.fnt", 20);
-			speedTag->setPosition(ccp(630, 410));
-			this->addChild(speedTag, 1);
+		length -= 8;
+		level++;
+		if (gameSpeed > 50)
+		gameSpeed -= 50;
+		this->removeChild(levelTag, true);
+		char level_str[24];
+		sprintf(level_str, "Level: %d", level);
+		levelTag = CCLabelTTF::create(level_str, "font09.fnt", 20);
+		levelTag->setPosition(ccp(630, 430));
+		this->addChild(levelTag, 1);
+		this->removeChild(speedTag, true);
+		char speed_str[24];
+		speed = 20 / (gameSpeed / 1000);
+		sprintf(speed_str, "Speed: %d", speed);
+		speedTag = CCLabelTTF::create(speed_str, "font09.fnt", 20);
+		speedTag->setPosition(ccp(630, 410));
+		this->addChild(speedTag, 1);
 		}
 		//2为tail    3head    1wall   
-		graph[beanX][beanY] = 0;
+		map[foodX][foodY] = 0;
 		//原来的头部就变成了tail(tail是除了头部的其他部分)
-		//graph[chopper[0][head]][chopper[1][head]] = 2;
-		int i=chopper[0][head],j=chopper[1][head];
-		graph[i][j] = 2;
+		//map[snake[0][head]][snake[1][head]] = 2;
+		int i=snake[0][head],j=snake[1][head];
+		map[i][j] = 2;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("tail.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
@@ -323,40 +379,42 @@ void GreedyChopper::step(float dt)
 		head = (head + 1) % 100;
 
 		//苹果点 设为 head
-		//graph[x][y] = 3;
+		//map[x][y] = 3;
 		i=x,j=y;
-		graph[i][j] = 3;
+		map[i][j] = 3;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("head.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
 		this->addChild(sprite[i][j], 1);
-		
+
 
 		//设此点为head点 
-		chopper[0][head] = x;
-		chopper[1][head] = y;
+		snake[0][head] = x;
+		snake[1][head] = y;
 		srand(time(0));
 		do
 		{
-			beanX = rand() % 22 + 1;
-			beanY = rand() % 22 + 1;
-		} while (graph[beanX][beanY]);
+		foodX = rand() % 22 + 1;
+		foodY = rand() % 22 + 1;
+		} while (map[foodX][foodY]);
 		//随机一个点 作为下一个苹果位置，这个点的贴图居然和tail是一样的。tail不是尾部的一个，是除了head之外所有的。
-		//graph[beanX][beanY] = 2;
-		i=beanX,j=beanY;
-		graph[i][j] = 2;
+		//map[foodX][foodY] = 2;
+		i=foodX,j=foodY;
+		map[i][j] = 2;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("tail.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
 		this->addChild(sprite[i][j], 1);
+		*/
 	}
-
 	//也没吃到苹果，也没撞墙的时候。
 	else
 	{
+
+		/*
 		//tail的格子设为0，就是grid了。将最后一个tail设为grid
-		int i=chopper[0][tail],j=chopper[1][tail];
-		graph[i][j] = 0;
+		int i=snake[0][tail],j=snake[1][tail];
+		map[i][j] = 0;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("grid.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
@@ -364,8 +422,8 @@ void GreedyChopper::step(float dt)
 		tail = (tail + 1) % 100;
 
 		//head设为tail
-		i=chopper[0][head],j=chopper[1][head];
-		graph[i][j] = 2;
+		i=snake[0][head],j=snake[1][head];
+		map[i][j] = 2;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("tail.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
@@ -374,38 +432,71 @@ void GreedyChopper::step(float dt)
 
 		//这个点设为head
 		i=x,j=y;
-		graph[i][j] = 3;
+		map[i][j] = 3;
 		this->removeChild(sprite[i][j], true);
 		sprite[i][j] = CCSprite::create("head.png");
 		sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
 		this->addChild(sprite[i][j], 1);
 
 		//记录头的数组也设为这个点的坐标。
-		chopper[0][head] = x;
-		chopper[1][head] = y;
+		snake[0][head] = x;
+		snake[1][head] = y;
+		*/
 	}
+
+	// 蛇身移动
+
+	for (int i = snakeNum; i > 0; i--) {
+
+		//最后一节坐标=倒数第二个坐标，而最后一节坐标被丢弃
+		snake[i][0] = snake[i - 1][0];
+
+		snake[i][1] = snake[i - 1][1];
+
+	}
+
+	snake[0][0] = x;
+	snake[0][1] = y;
+
+
+
+
+
+	//判断好了 移动好了坐标，以下开始画snake的每个sprite，和随机出来的food sprite
+	//	snake_sprite数组 每个精灵，的坐标都设置为 snake里面存储的坐标
+	for (int i = 0; i < snakeNum; i++)
+	{
+		int x1=snake[i][0];
+		int y1=snake[i][1];
+		snake_sprite[i]->setPosition(ccp(BLOCK_W * x1+BLOCK_W/2, BLOCK_W * y1+BLOCK_W/2));
+		//this->addChild(snake_sprite[i], 1);
+		//snake_sprite[i]
+
+	}
+
+
 
 	/*
 	for (int i = 0; i < 24; i++)
 	{
-		for (int j = 0; j < 24; j++)
-			this->removeChild(sprite[i][j], true);
+	for (int j = 0; j < 24; j++)
+	this->removeChild(sprite[i][j], true);
 	}
 	for (int i = 0; i < 24; i++)
 	{
-		for (int j = 0; j < 24; j++)
-		{
-			if (graph[i][j] == 1)
-				sprite[i][j] = CCSprite::create("wall.png");
-			else if (graph[i][j] == 2)
-				sprite[i][j] = CCSprite::create("tail.png");
-			else if (graph[i][j] == 3)
-				sprite[i][j] = CCSprite::create("head.png");
-			else
-				sprite[i][j] = CCSprite::create("grid.png");
-			sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
-			this->addChild(sprite[i][j], 1);
-		}
+	for (int j = 0; j < 24; j++)
+	{
+	if (map[i][j] == 1)
+	sprite[i][j] = CCSprite::create("wall.png");
+	else if (map[i][j] == 2)
+	sprite[i][j] = CCSprite::create("tail.png");
+	else if (map[i][j] == 3)
+	sprite[i][j] = CCSprite::create("head.png");
+	else
+	sprite[i][j] = CCSprite::create("grid.png");
+	sprite[i][j]->setPosition(ccp(20 * i + 5, 20 * j + 5));
+	this->addChild(sprite[i][j], 1);
+	}
 	}
 	*/
 }

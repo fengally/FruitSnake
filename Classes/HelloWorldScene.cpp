@@ -118,7 +118,7 @@ void HelloWorld::menuOnNewGame(CCObject* pSender)
 		CC_BREAK_IF(!p);
 
 		scene->addChild(p);
-		CCDirector::sharedDirector()->replaceScene(CCTransitionSlideInR::transitionWithDuration(0.5f, scene));
+		CCDirector::sharedDirector()->replaceScene(CCTransitionSlideInR::create(0.5f, scene));
 
 	} while (0);
 }
